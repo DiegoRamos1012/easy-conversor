@@ -1,33 +1,39 @@
 import path from "path";
 import { isSupportedFormat } from "../utils/formatValidator";
 import { generateUniqueFileName } from "../utils/nameGenerator";
-import { convertJPGtoPNG } from "../utils/fileHelper";
-import { convertPNGtoJPG } from "../utils/fileHelper";
+import { convertJPGtoPNG, convertPNGtoJPG } from "../utils/fileHelper";
+
+type ConversionFunction = (input: string, output: string) => Promise<{ path: string }>;
 
 export class ConvertService {
+  // Mapa de tipos de conversão para suas funções correspondentes
+  private conversionMap: Record<string, ConversionFunction> = {
+    png: convertJPGtoPNG,
+    jpg: convertPNGtoJPG,
+    jpeg: convertPNGtoJPG,
+  };
+
   async convertFile(file: { filename: string; path: string }, type: string) {
     // Valida se o arquivo é suportado
     if (!isSupportedFormat(file.filename)) {
       throw new Error("Formato não suportado");
     }
 
-    // Gera nome único
-    const uniqueName = generateUniqueFileName(file.filename);
-
-    // Define caminho de saída e chama a função adequada
-    let outputPath: string;
-
-    if (type === "png") {
-      outputPath = path.resolve("temp", `${uniqueName}.png`);
-      await convertJPGtoPNG(file.path, outputPath);
-    } else if (type === "jpg" || type === "jpeg") {
-      outputPath = path.resolve("temp", `${uniqueName}.jpg`);
-      await convertPNGtoJPG(file.path, outputPath);
-    } else {
+    // Busca a função de conversão no mapa
+    const convertFn = this.conversionMap[type.toLowerCase()];
+    if (!convertFn) {
       throw new Error(`Tipo de conversão "${type}" não suportado`);
     }
 
-    // Retorna o caminho do arquivo convertido
-    return { path: outputPath };
+    // Gera nome único e define caminho de saída
+    const uniqueName = generateUniqueFileName(file.filename);
+    const extension = type.toLowerCase() === "png" ? "png" : "jpg";
+    const outputPath = path.resolve("temp", `${uniqueName}.${extension}`);
+
+    // Executa a conversão usando a função correspondente
+    const result = await convertFn(file.path, outputPath);
+
+    // Retorna o resultado da conversão (ex: { path: "temp/arquivo-123456.png" })
+    return result;
   }
 }
