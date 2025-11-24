@@ -7,11 +7,12 @@ const UPLOADS_DIR = path.resolve("uploads");
 
 // Função que limpa arquivos mais antigos que X ms
 function deleteOldFiles(directory: string, maxAgeMs: number) {
-  if (!fs.existsSync(directory)) return;
+  if (!fs.existsSync(directory)) return 0;
 
   const files = fs.readdirSync(directory);
-
   const now = Date.now();
+
+  let removedCount = 0;
 
   for (const file of files) {
     const filePath = path.join(directory, file);
@@ -21,9 +22,11 @@ function deleteOldFiles(directory: string, maxAgeMs: number) {
 
     if (age > maxAgeMs) {
       fs.unlinkSync(filePath);
-      console.log(chalk.greenBright(`Arquivo removido: ${filePath}`));
+      removedCount++;
     }
   }
+
+  return removedCount;
 }
 
 // Exporta função para iniciar o job
@@ -38,7 +41,16 @@ export function startCleanupJob() {
 
   setInterval(() => {
     console.log(chalk.yellow("Limpando arquivos antigos..."));
-    deleteOldFiles(TEMP_DIR, FIVE_MINUTES);
-    deleteOldFiles(UPLOADS_DIR, FIVE_MINUTES);
+
+    const removedTemp = deleteOldFiles(TEMP_DIR, FIVE_MINUTES);
+    const removedUploads = deleteOldFiles(UPLOADS_DIR, FIVE_MINUTES);
+
+    const totalRemoved = removedTemp + removedUploads;
+
+    console.log(
+      chalk.greenBright(
+        `🧹 Total de arquivos removidos: ${chalk.bold(totalRemoved)}`
+      )
+    );
   }, FIVE_MINUTES);
 }

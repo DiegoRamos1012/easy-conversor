@@ -7,6 +7,7 @@ import {
   convertJPGtoPNG,
   convertPNGtoJPG,
 } from "../utils/fileHelper";
+import chalk from "chalk";
 
 type ConversionFunction = (
   input: string,
@@ -47,7 +48,9 @@ export class ConvertService {
     const result = await convertFn(file.path, outputPath);
 
     console.log(
-      `Arquivo "${originalName}" convertido para ${uniqueName}.${extension}`
+      chalk.greenBright(
+        `Arquivo "${originalName}" convertido para ${uniqueName}.${extension}`
+      )
     );
 
     return result;
