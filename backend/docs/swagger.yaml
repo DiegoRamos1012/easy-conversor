@@ -8,7 +8,7 @@ info:
     PNG, JPG ou PDF. Ideal para aplicações que necessitam manipular imagens ou realizar conversões rápidas.
 
 servers:
-  - url: http://localhost:3000
+  - url: http://localhost:4000
     description: Servidor de desenvolvimento local
 
 tags:
