@@ -5,24 +5,27 @@ import chalk from "chalk";
 const TEMP_DIR = path.resolve("temp");
 const UPLOADS_DIR = path.resolve("uploads");
 
-// Função que limpa arquivos mais antigos que X ms
-function deleteOldFiles(directory: string, maxAgeMs: number) {
+// Função assíncrona que limpa arquivos mais antigos que X ms
+async function deleteOldFiles(directory: string, maxAgeMs: number) {
   if (!fs.existsSync(directory)) return 0;
 
-  const files = fs.readdirSync(directory);
+  const files = await fs.promises.readdir(directory);
   const now = Date.now();
-
   let removedCount = 0;
 
   for (const file of files) {
     const filePath = path.join(directory, file);
-    const stats = fs.statSync(filePath);
 
-    const age = now - stats.mtimeMs;
+    try {
+      const stats = await fs.promises.stat(filePath);
+      const age = now - stats.mtimeMs;
 
-    if (age > maxAgeMs) {
-      fs.unlinkSync(filePath);
-      removedCount++;
+      if (age > maxAgeMs) {
+        await fs.promises.unlink(filePath);
+        removedCount++;
+      }
+    } catch (err) {
+      console.error(chalk.red(`Erro ao processar ${filePath}:`), err);
     }
   }
 
@@ -39,11 +42,11 @@ export function startCleanupJob() {
     )
   );
 
-  setInterval(() => {
+  setInterval(async () => {
     console.log(chalk.yellow("Limpando arquivos antigos..."));
 
-    const removedTemp = deleteOldFiles(TEMP_DIR, FIVE_MINUTES);
-    const removedUploads = deleteOldFiles(UPLOADS_DIR, FIVE_MINUTES);
+    const removedTemp = await deleteOldFiles(TEMP_DIR, FIVE_MINUTES);
+    const removedUploads = await deleteOldFiles(UPLOADS_DIR, FIVE_MINUTES);
 
     const totalRemoved = removedTemp + removedUploads;
 
