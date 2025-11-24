@@ -20,7 +20,9 @@ build/
 .parcel-cache/
 .cache/
 out/
-public/
+temp/
+uploads/
+
 
 # Testing
 coverage/

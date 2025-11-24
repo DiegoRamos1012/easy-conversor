@@ -1,39 +1,55 @@
 import path from "path";
+import { Express } from "express";
 import { isSupportedFormat } from "../utils/formatValidator";
 import { generateUniqueFileName } from "../utils/nameGenerator";
-import { convertJPGtoPNG, convertPNGtoJPG } from "../utils/fileHelper";
+import {
+  convertImageToPDF,
+  convertJPGtoPNG,
+  convertPNGtoJPG,
+} from "../utils/fileHelper";
 
-type ConversionFunction = (input: string, output: string) => Promise<{ path: string }>;
+type ConversionFunction = (
+  input: string,
+  output: string
+) => Promise<{ path: string }>;
 
 export class ConvertService {
-  // Mapa de tipos de conversão para suas funções correspondentes
+  // Mapa de tipos de conversão
   private conversionMap: Record<string, ConversionFunction> = {
     png: convertJPGtoPNG,
     jpg: convertPNGtoJPG,
     jpeg: convertPNGtoJPG,
+    pdf: convertImageToPDF,
   };
 
-  async convertFile(file: { filename: string; path: string }, type: string) {
-    // Valida se o arquivo é suportado
-    if (!isSupportedFormat(file.filename)) {
+  async convertFile(file: Express.Multer.File, type: string) {
+    const normalizedType = type.toLowerCase();
+
+    const originalName =
+      file.originalname || file.filename || path.basename(file.path);
+
+    if (!isSupportedFormat(originalName)) {
       throw new Error("Formato não suportado");
     }
 
-    // Busca a função de conversão no mapa
-    const convertFn = this.conversionMap[type.toLowerCase()];
+    const convertFn = this.conversionMap[normalizedType];
     if (!convertFn) {
       throw new Error(`Tipo de conversão "${type}" não suportado`);
     }
 
-    // Gera nome único e define caminho de saída
-    const uniqueName = generateUniqueFileName(file.filename);
-    const extension = type.toLowerCase() === "png" ? "png" : "jpg";
+    // Define a extensão correta conforme o tipo pedido
+    const extension = normalizedType; // png, jpg/jpeg ou pdf
+
+    const uniqueName = generateUniqueFileName(originalName);
+
     const outputPath = path.resolve("temp", `${uniqueName}.${extension}`);
 
-    // Executa a conversão usando a função correspondente
     const result = await convertFn(file.path, outputPath);
 
-    // Retorna o resultado da conversão (ex: { path: "temp/arquivo-123456.png" })
+    console.log(
+      `Arquivo "${originalName}" convertido para ${uniqueName}.${extension}`
+    );
+
     return result;
   }
 }

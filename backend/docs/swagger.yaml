@@ -1,0 +1,104 @@
+openapi: 3.0.0
+
+info:
+  title: EasyConversor API
+  version: 1.0.0
+  description: |
+    API para conversão de arquivos de imagem, permitindo transformar JPG, PNG e outros formatos em
+    PNG, JPG ou PDF. Ideal para aplicações que necessitam manipular imagens ou realizar conversões rápidas.
+
+servers:
+  - url: http://localhost:3000
+    description: Servidor de desenvolvimento local
+
+tags:
+  - name: Conversão
+    description: Endpoints relacionados à conversão de arquivos
+
+paths:
+  /convert:
+    post:
+      summary: Converte um arquivo de imagem para outro formato
+      description: Envia uma imagem e converte para PNG, JPG ou PDF.
+      tags:
+        - Conversão
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Arquivo de imagem enviado (ex: JPG, PNG)
+                type:
+                  type: string
+                  description: Formato desejado de saída (png, jpg, pdf)
+                  enum: [png, jpg, pdf]
+              required:
+                - file
+                - type
+            examples:
+              exemploUpload:
+                summary: Exemplo de envio de arquivo JPG
+                value:
+                  type: "png"
+      responses:
+        "200":
+          description: Conversão realizada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConvertedFileResponse"
+              examples:
+                conversaoOk:
+                  summary: Exemplo de resposta de sucesso
+                  value:
+                    message: "Arquivo convertido com sucesso"
+                    outputFile: "converted/abc123.png"
+        "400":
+          description: Erro na solicitação ou formato inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                erroEntrada:
+                  summary: Tipo de arquivo não suportado
+                  value:
+                    error: "Formato de saída inválido. Permitidos: png, jpg, pdf."
+        "500":
+          description: Erro interno no servidor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                erroInterno:
+                  summary: Falha inesperada
+                  value:
+                    error: "Falha ao converter o arquivo."
+
+components:
+  schemas:
+    ConvertedFileResponse:
+      type: object
+      description: Resposta retornada após conversão bem-sucedida.
+      properties:
+        message:
+          type: string
+          example: Arquivo convertido com sucesso
+        outputFile:
+          type: string
+          description: Caminho do arquivo convertido no servidor
+          example: converted/meu-arquivo.pdf
+
+    ErrorResponse:
+      type: object
+      description: Estrutura padrão para erros da API.
+      properties:
+        error:
+          type: string
+          example: O arquivo enviado não é uma imagem válida.
