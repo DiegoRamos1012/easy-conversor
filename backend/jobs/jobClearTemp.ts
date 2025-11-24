@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import chalk from "chalk";
 
 const TEMP_DIR = path.resolve("temp");
 const UPLOADS_DIR = path.resolve("uploads");
@@ -20,7 +21,7 @@ function deleteOldFiles(directory: string, maxAgeMs: number) {
 
     if (age > maxAgeMs) {
       fs.unlinkSync(filePath);
-      console.log(`Arquivo removido: ${filePath}`);
+      console.log(chalk.greenBright(`Arquivo removido: ${filePath}`));
     }
   }
 }
@@ -29,10 +30,14 @@ function deleteOldFiles(directory: string, maxAgeMs: number) {
 export function startCleanupJob() {
   const FIVE_MINUTES = 5 * 60 * 1000; // 5 min em ms
 
-  console.log("Job de limpeza iniciado...");
+  console.log(
+    chalk.blue(
+      "- Job de limpeza de arquivos temporários executando a cada 5 minutos"
+    )
+  );
 
   setInterval(() => {
-    console.log("🧽 Limpando arquivos antigos...");
+    console.log(chalk.yellow("Limpando arquivos antigos..."));
     deleteOldFiles(TEMP_DIR, FIVE_MINUTES);
     deleteOldFiles(UPLOADS_DIR, FIVE_MINUTES);
   }, FIVE_MINUTES);

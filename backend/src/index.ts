@@ -5,6 +5,7 @@ import swaggerUi from "swagger-ui-express";
 import swaggerDocument from "../swagger";
 import ConvertRoutes from "../routes/ConvertRoutes";
 import { startCleanupJob } from "../jobs/jobClearTemp";
+import chalk from "chalk";
 
 dotenv.config();
 
@@ -30,8 +31,14 @@ app.use(
   swaggerUi.setup(swaggerDocument)
 );
 
+console.log("--------------------------");
+console.log(chalk.bold("EasyConversor - Backend"));
+console.log("--------------------------");
+console.log(chalk.bold("Github: Diego1012"));
+console.log("--------------------------");
+
 startCleanupJob();
 
 app.listen(port, () => {
-  console.log(`🚀 Servidor rodando na porta ${port}`);
+  console.log(`Servidor rodando na porta ${chalk.bold(port)}`);
 });
