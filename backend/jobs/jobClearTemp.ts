@@ -43,7 +43,7 @@ export function startCleanupJob() {
   );
 
   setInterval(async () => {
-    console.log(chalk.yellow("Limpando arquivos antigos..."));
+    console.log(chalk.yellow("- Limpando arquivos antigos..."));
 
     const removedTemp = await deleteOldFiles(TEMP_DIR, FIVE_MINUTES);
     const removedUploads = await deleteOldFiles(UPLOADS_DIR, FIVE_MINUTES);
@@ -52,7 +52,7 @@ export function startCleanupJob() {
 
     console.log(
       chalk.greenBright(
-        `🧹 Total de arquivos removidos: ${chalk.bold(totalRemoved)}`
+        `- Total de arquivos removidos: ${chalk.bold(totalRemoved)}`
       )
     );
   }, FIVE_MINUTES);
