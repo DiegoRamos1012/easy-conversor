@@ -3,45 +3,34 @@ import path from "path";
 import fs from "fs";
 import PDFDocument from "pdfkit";
 
-// ------------------------------
+// ---------------------------------------
 // Criador de diretório seguro
-// ------------------------------
+// ---------------------------------------
 function ensureDir(filePath: string) {
   const dir = path.dirname(filePath);
   fs.mkdirSync(dir, { recursive: true });
 }
 
-// ------------------------------
-// JPG → PNG
-// ------------------------------
-export async function convertJPGtoPNG(
+// ---------------------------------------
+// Conversão genérica para PNG / JPG / WEBP / GIF / AVIF
+// ---------------------------------------
+export async function convertImage(
   inputFilePath: string,
-  outputFilePath: string
+  outputFilePath: string,
+  format: "png" | "jpeg" | "webp" | "gif" | "avif"
 ) {
   ensureDir(outputFilePath);
 
-  await sharp(inputFilePath).png().toFile(outputFilePath);
+  await sharp(inputFilePath)[format]({
+    quality: 100, 
+  }).toFile(outputFilePath);
 
   return { path: outputFilePath };
 }
 
-// ------------------------------
-// PNG → JPG
-// ------------------------------
-export async function convertPNGtoJPG(
-  inputFilePath: string,
-  outputFilePath: string
-) {
-  ensureDir(outputFilePath);
-
-  await sharp(inputFilePath).jpeg({ quality: 100 }).toFile(outputFilePath);
-
-  return { path: outputFilePath };
-}
-
-// ------------------------------
-// IMAGEM → PDF (qualidade máxima real)
-// ------------------------------
+// ---------------------------------------
+// IMAGEM → PDF (qualidade real preservada)
+// ---------------------------------------
 export async function convertImageToPDF(
   inputFilePath: string,
   outputFilePath: string
@@ -50,35 +39,30 @@ export async function convertImageToPDF(
 
   return new Promise<{ path: string }>(async (resolve, reject) => {
     try {
-      // Obtém metadados sem modificar a imagem
+      // Lê a imagem original sem recomprimir
+      const imageBuffer = await fs.promises.readFile(inputFilePath);
+
+      // Obtém metadados originais
       const metadata = await sharp(inputFilePath).metadata();
 
       const width = metadata.width ?? 595;  // fallback A4
       const height = metadata.height ?? 842;
 
-      // Evita recompressão usando o buffer original
-      const imageBuffer = await fs.promises.readFile(inputFilePath);
-
-      // Cria PDF
-      const doc = new PDFDocument({
-        autoFirstPage: false, // vamos criar a página com o tamanho exato
+      // Cria o PDF
+      const pdf = new PDFDocument({
+        autoFirstPage: false,
       });
 
       const stream = fs.createWriteStream(outputFilePath);
-      doc.pipe(stream);
+      pdf.pipe(stream);
 
-      // Adiciona página no tamanho exato da imagem
-      doc.addPage({
-        size: [width, height],
-      });
+      // Página do tamanho exato da imagem
+      pdf.addPage({ size: [width, height] });
 
-      // Insere a imagem SEM ALTERAR
-      doc.image(imageBuffer, 0, 0, {
-        width,
-        height,
-      });
+      // Insere a imagem original (sem reprocessar)
+      pdf.image(imageBuffer, 0, 0, { width, height });
 
-      doc.end();
+      pdf.end();
 
       stream.on("finish", () => resolve({ path: outputFilePath }));
       stream.on("error", (err) => reject(err));
