@@ -2,7 +2,6 @@
 
 import React, { useRef, useState } from "react";
 
-// shadcn component placeholders (you will install these later)
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -13,6 +12,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+import { api } from "@/api"; // ← usa este, não axios direto
+import { AxiosError, isAxiosError } from "axios"; // apenas utilidades
 
 export default function Home() {
   const fileRef = useRef<HTMLInputElement | null>(null);
@@ -30,6 +32,7 @@ export default function Home() {
     const f = e.target.files?.[0] ?? null;
     setFile(f);
     setOutputPath(null);
+
     if (f) {
       setPreview(URL.createObjectURL(f));
     } else {
@@ -39,6 +42,7 @@ export default function Home() {
 
   async function handleConvert() {
     if (!file) return;
+
     setLoading(true);
     setOutputPath(null);
 
@@ -47,21 +51,34 @@ export default function Home() {
       form.append("file", file);
       form.append("type", type);
 
-      // endpoint matches backend route (you may need to add /api prefix)
-      const res = await fetch("/convert", {
-        method: "POST",
-        body: form,
+      const res = await api.post("/convert", form, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
-      const data = await res.json();
-      if (res.ok) {
-        setOutputPath(data.output || data.outputFile || data.path || null);
-      } else {
-        alert(data.error || "Erro na conversão");
+      const data = res.data;
+      setOutputPath(data.output || data.outputFile || data.path || null);
+
+    } catch (err: unknown) {
+      if (isAxiosError(err)) {
+        const axiosErr = err as AxiosError<{ error?: string }>;
+
+        console.error(axiosErr.response?.data);
+
+        const message =
+          axiosErr.response?.data?.error ||
+          axiosErr.message ||
+          "Falha ao enviar o arquivo";
+
+        alert(message);
+        return;
       }
-    } catch (err) {
-      console.error(err);
-      alert("Falha ao enviar o arquivo");
+
+      if (err instanceof Error) {
+        alert(err.message);
+        return;
+      }
+
+      alert("Erro inesperado");
     } finally {
       setLoading(false);
     }
@@ -131,9 +148,7 @@ export default function Home() {
 
                 <div className="flex items-center gap-2">
                   <div className="flex flex-col">
-                    <Label className="text-white/80 mb-1">
-                      Formato de saída
-                    </Label>
+                    <Label className="text-white/80 mb-1">Formato de saída</Label>
 
                     <Select
                       onValueChange={(v: string) => setType(v)}
@@ -184,8 +199,7 @@ export default function Home() {
         </Card>
 
         <footer className="mt-6 text-center text-white/60 text-sm">
-          Projeto rápido com design inspirado no shadcn — instale os componentes
-          para ativar estilos e interações.
+          Github: Diego1012
         </footer>
       </div>
     </div>
