@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
   title: "EasyConverter",
@@ -15,6 +16,7 @@ export default function RootLayout({
     <html lang="pt-BR">
       <body className="min-h-screen bg-[linear-gradient(90deg,rgba(2,0,36,1)_0%,rgba(10,49,122,1)_44%,rgba(17,70,150,1)_100%)]">
         {children}
+        <Toaster />
       </body>
     </html>
   );

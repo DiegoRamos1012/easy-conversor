@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-
+import { api } from "@/api";
+import { AxiosError, isAxiosError } from "axios";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -12,9 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-import { api } from "@/api"; // ← usa este, não axios direto
-import { AxiosError, isAxiosError } from "axios"; // apenas utilidades
+import Image from "next/image";
 
 export default function Home() {
   const fileRef = useRef<HTMLInputElement | null>(null);
@@ -57,7 +56,6 @@ export default function Home() {
 
       const data = res.data;
       setOutputPath(data.output || data.outputFile || data.path || null);
-
     } catch (err: unknown) {
       if (isAxiosError(err)) {
         const axiosErr = err as AxiosError<{ error?: string }>;
@@ -125,36 +123,41 @@ export default function Home() {
             {file && (
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  <div className="w-24 h-24 rounded overflow-hidden bg-white/5 flex items-center justify-center">
+                  <div className="w-24 h-24 rounded overflow-hidden bg-white/5 relative">
                     {preview ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      <Image
                         src={preview}
                         alt="preview"
-                        className="object-cover w-full h-full"
+                        fill
+                        className="object-cover"
+                        sizes="96px"
                       />
                     ) : (
-                      <div className="text-white/60 text-xs">Preview</div>
+                      <div className="absolute inset-0 flex items-center justify-center text-white/60 text-xs">
+                        Preview
+                      </div>
                     )}
                   </div>
 
                   <div className="text-white text-sm">
                     <div className="font-medium">{file.name}</div>
-                    <div className="text-white/60 text-xs">
-                      {(file.size / 1024).toFixed(0)} KB
+                    <div className="text-white/60 text-xs mt-2">
+                      Tamanho do arquivo: {(file.size / 1024).toFixed(0)} KB
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <div className="flex flex-col">
-                    <Label className="text-white/80 mb-1">Formato de saída</Label>
+                    <Label className="text-white/80 mb-1">
+                      Formato de saída
+                    </Label>
 
                     <Select
                       onValueChange={(v: string) => setType(v)}
                       defaultValue={type}
                     >
-                      <SelectTrigger className="w-40">
+                      <SelectTrigger className="text-white w-25">
                         <SelectValue placeholder="Selecionar" />
                       </SelectTrigger>
                       <SelectContent>
@@ -169,7 +172,7 @@ export default function Home() {
                     </Select>
                   </div>
 
-                  <Button disabled={loading} onClick={handleConvert}>
+                  <Button className="mt-5" disabled={loading} onClick={handleConvert}>
                     {loading ? "Convertendo..." : "Converter"}
                   </Button>
                 </div>
