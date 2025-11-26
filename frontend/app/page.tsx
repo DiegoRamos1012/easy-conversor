@@ -24,10 +24,38 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [outputPath, setOutputPath] = useState<string | null>(null);
 
+  // Estado para controle de drag'n'drop
+  const [isDragging, setIsDragging] = useState(false);
+
   const outputFormats = ["png", "jpg", "jpeg", "webp", "gif", "avif", "pdf"];
 
   const handlePickFile = useCallback(() => {
     fileRef.current?.click();
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const f = e.dataTransfer.files?.[0] ?? null;
+    if (f) {
+      setFile(f);
+      setOutputPath(null);
+      setPreview(URL.createObjectURL(f));
+    }
   }, []);
 
   const handleFileChange = useCallback(
@@ -96,7 +124,15 @@ export default function Home() {
 
               <div
                 onClick={handlePickFile}
-                className="cursor-pointer rounded-lg border border-dashed border-white/10 p-6 text-center bg-white/2 hover:bg-white/3"
+                onDragOver={handleDragOver}
+                onDragEnter={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`cursor-pointer rounded-lg border border-dashed p-6 text-center transition-colors ${
+                  isDragging
+                    ? "border-white/30 bg-white/3"
+                    : "border-white/10 bg-white/2 hover:bg-white/3"
+                }`}
               >
                 <p className="text-white/80">
                   Arraste e solte ou clique para selecionar um arquivo
