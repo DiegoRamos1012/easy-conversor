@@ -1,8 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
-import { api } from "@/api";
-import { AxiosError, isAxiosError } from "axios";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -14,6 +12,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Image from "next/image";
+import { convertFile } from "@/helpers/handleConvert";
+import { Input } from "@/components/ui/input";
+import { Loader2, WandSparkles } from "lucide-react";
 
 export default function Home() {
   const fileRef = useRef<HTMLInputElement | null>(null);
@@ -23,64 +24,50 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [outputPath, setOutputPath] = useState<string | null>(null);
 
-  function handlePickFile() {
+  const outputFormats = ["png", "jpg", "jpeg", "webp", "gif", "avif", "pdf"];
+
+  const handlePickFile = useCallback(() => {
     fileRef.current?.click();
-  }
+  }, []);
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0] ?? null;
-    setFile(f);
-    setOutputPath(null);
+  const handleFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const f = e.target.files?.[0] ?? null;
+      setFile(f);
+      setOutputPath(null);
 
-    if (f) {
-      setPreview(URL.createObjectURL(f));
-    } else {
-      setPreview(null);
-    }
-  }
+      if (f) {
+        setPreview(URL.createObjectURL(f));
+      } else {
+        setPreview(null);
+      }
+    },
+    []
+  );
 
-  async function handleConvert() {
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
+
+  const handleConvert = useCallback(async () => {
     if (!file) return;
 
     setLoading(true);
     setOutputPath(null);
 
     try {
-      const form = new FormData();
-      form.append("file", file);
-      form.append("type", type);
-
-      const res = await api.post("/convert", form, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      const data = res.data;
-      setOutputPath(data.output || data.outputFile || data.path || null);
-    } catch (err: unknown) {
-      if (isAxiosError(err)) {
-        const axiosErr = err as AxiosError<{ error?: string }>;
-
-        console.error(axiosErr.response?.data);
-
-        const message =
-          axiosErr.response?.data?.error ||
-          axiosErr.message ||
-          "Falha ao enviar o arquivo";
-
-        alert(message);
-        return;
-      }
-
-      if (err instanceof Error) {
-        alert(err.message);
-        return;
-      }
-
-      alert("Erro inesperado");
+      const resultPath = await convertFile(file, type);
+      setOutputPath(resultPath);
+    } catch (err) {
+      console.error("Erro ao converter:", err);
+      const message = err instanceof Error ? err.message : "Erro inesperado";
+      alert(message);
     } finally {
       setLoading(false);
     }
-  }
+  }, [file, type]);
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12">
@@ -99,7 +86,7 @@ export default function Home() {
 
           <CardContent className="space-y-4">
             <div>
-              <input
+              <Input
                 ref={fileRef}
                 type="file"
                 accept=".jpg,.jpeg,.png,image/*"
@@ -128,6 +115,8 @@ export default function Home() {
                       <Image
                         src={preview}
                         alt="preview"
+                        priority={false}
+                        loading="lazy"
                         fill
                         className="object-cover"
                         sizes="96px"
@@ -161,19 +150,29 @@ export default function Home() {
                         <SelectValue placeholder="Selecionar" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="png">PNG</SelectItem>
-                        <SelectItem value="jpg">JPG</SelectItem>
-                        <SelectItem value="jpeg">JPEG</SelectItem>
-                        <SelectItem value="webp">WEBP</SelectItem>
-                        <SelectItem value="gif">GIF</SelectItem>
-                        <SelectItem value="avif">AVIF</SelectItem>
-                        <SelectItem value="pdf">PDF</SelectItem>
+                        {outputFormats.map((fmt) => (
+                          <SelectItem key={fmt} value={fmt.toLowerCase()}>
+                            {fmt.toUpperCase()}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
 
-                  <Button className="mt-5" disabled={loading} onClick={handleConvert}>
-                    {loading ? "Convertendo..." : "Converter"}
+                  <Button
+                    className="mt-5"
+                    disabled={loading}
+                    onClick={handleConvert}
+                  >
+                    <WandSparkles />
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Convertendo...
+                      </>
+                    ) : (
+                      "Converter"
+                    )}
                   </Button>
                 </div>
               </div>
